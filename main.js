@@ -1,15 +1,16 @@
 // System
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d", { alpha: false });
-let touch = { x: 0, y: 0, active: false}
 let lastFrameTime;
 
 // Player
 let playerZ = 0;
 let playerVel = 0;
 let playerAngle = 0;
-let gravity = -300;
-let bounceVel = [100];
+let gravity = -350;
+let bounceVel = [100, 130, 160, 190, 210, 240];
+let curBounceVelIdx = 0;
+let bounceHigher = false;
 let blink = false;
 
 // Trampoline
@@ -18,8 +19,12 @@ let trampShakeDecayPct = 0.9;
 let trampShakeAngle = 0;
 let trampShakeAngleSpeed = 4000.0;
 
+// Input
+let touch = { x: 0, y: 0, active: false, up: false}
+let lastTouch = 0;
+
 canvas.addEventListener("mousedown", e => { touch.active = true }, false);
-canvas.addEventListener("mouseup", e => { touch.active = false }, false);
+canvas.addEventListener("mouseup", e => { touch.active = false, touch.up = true }, false);
 canvas.addEventListener("mousemove", e => { SetTouchPos(e); e.preventDefault(); }, false );
 canvas.addEventListener("touchstart", e => { SetTouchPos(e.touches[0]); touch.active = true; e.preventDefault(); }, false );
 canvas.addEventListener("touchend", e => { touch.active = false; e.preventDefault(); }, false );
@@ -40,6 +45,7 @@ function GameLoop(curTime)
 
     UpdatePlayer(dt);
     UpdateTrampoline(dt);
+    touch.up = false;
 
     ctx.fillStyle = "#AADDFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height*0.7);
@@ -61,17 +67,24 @@ function UpdatePlayer(dt)
     playerZ += playerVel * dt;
     if (playerZ <= 0.0)
     {
-        playerZ = 0.0;
-        playerVel = bounceVel[0];
-
         // Start trampoline shake
         trampShakeAmount = 4.0;
         trampShakeAngle = 0;
+
+        //curBounceVelIdx = Math.max(curBounceVelIdx - 1, 0);
+
+        playerZ = 0.0;
+        playerVel = bounceVel[curBounceVelIdx];
     }
 
-    if (touch.active)
+    if (touch.up)
     {
-        playerAngle += 360 * dt;
+        //console.log(playerZ);
+        if (playerZ < 10)
+        {
+            curBounceVelIdx = Math.min(curBounceVelIdx + 1, bounceVel.length - 1);
+            playerVel = bounceVel[curBounceVelIdx];
+        }
     }
 }
 
