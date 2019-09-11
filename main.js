@@ -11,7 +11,7 @@ let gravity = -1400;
 let bounceVelMin = 1000;
 let bounceVel = bounceVelMin;
 let bounceVelHitIncrease = 120;
-let bounceVelMissDecrease = 80;
+let bounceVelMissDecrease = 120;
 let curBounceVelIdx = 0;
 let bounceHigher = false;
 let blink = false;
@@ -31,6 +31,7 @@ let trampShakeAngleSpeed = 4000.0;
 
 // Camera
 let camScale = 0.7;
+let camDecayDelay = 0;
 
 // Input
 let touch = { x: 0, y: 0, active: false, up: false}
@@ -110,14 +111,14 @@ function UpdatePlayer(dt)
     {
         if (uprightFix)
         {
-            playerAngle *= 0.9;
+            playerAngle *= 0.8;
             if (Math.abs(playerAngle) < 0.01)
             {
                 uprightFix = false;
             }
         }
         
-        flipAngleVel *= 0.9;
+        flipAngleVel *= 0.8;
     }
 
     let prevPlayerAngle = playerAngle;
@@ -172,8 +173,22 @@ function UpdatePlayer(dt)
         totalAngleDelta = 0;
     }
 
-    let desiredCamScale = Math.min(camScale, 300.0 / Math.max(playerZ, 300.0));
+    let desiredCamScale = 300.0 / Math.max(playerZ, 300.0);
+    if (desiredCamScale < camScale)
+    {
+        camDecayDelay = 3.0;
+    }
+    else
+    {
+        camDecayDelay -= dt;
+    }
+
+    desiredCamScale = Math.min(camScale, desiredCamScale);
     camScale += (desiredCamScale - camScale) * 0.2;
+    if (camDecayDelay <= 0.0)
+    {
+        camScale += (0.7 - camScale) * 0.001;
+    }
 }
 
 function UpdateTrampoline(dt)
