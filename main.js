@@ -21,6 +21,7 @@ let zMax = 0;
 let zMaxDecayDelay = 0;
 let flipAngleVel = 0;
 let uprightFix = false;
+let totalAngleDelta = 0;
 
 // Trampoline
 let trampShakeAmount = 0;
@@ -119,7 +120,10 @@ function UpdatePlayer(dt)
         flipAngleVel *= 0.9;
     }
 
+    let prevPlayerAngle = playerAngle;
     playerAngle += flipAngleVel * dt;
+    totalAngleDelta += playerAngle - prevPlayerAngle;
+    //if (totalAngleDelta >= 270) { console.log("FLIP!"); }
     if (playerAngle >= 180.0)
     {
         playerAngle -= 360.0;
@@ -148,8 +152,8 @@ function UpdatePlayer(dt)
         trampShakeAmount = 16.0;
         trampShakeAngle = 0;
 
-        jumpHigher = Math.abs(playerAngle) < 20.0;
-        perfectJump = Math.abs(playerAngle) < 8.0;
+        jumpHigher = totalAngleDelta >= 270 && Math.abs(playerAngle) < 20.0;
+        perfectJump = totalAngleDelta >= 270 && Math.abs(playerAngle) < 8.0;
 
         if (jumpHigher)
         {
@@ -161,10 +165,11 @@ function UpdatePlayer(dt)
             bounceVel = Math.max(bounceVel - bounceVelMissDecrease, bounceVelMin);
         }
 
-        bounceVel = 1000;
+        //bounceVel = 1000;
         playerZ = 0.0;
         playerVel = bounceVel;
         uprightFix = true;
+        totalAngleDelta = 0;
     }
 
     let desiredCamScale = Math.min(camScale, 300.0 / Math.max(playerZ, 300.0));
