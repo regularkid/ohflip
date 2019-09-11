@@ -7,11 +7,18 @@ let lastFrameTime;
 let playerZ = 0;
 let playerVel = 0;
 let playerAngle = 0;
-let gravity = -350;
-let bounceVel = [100, 130, 160, 190, 210, 240];
+let gravity = -1400;
+let bounceVelMin = 400;
+let bounceVel = bounceVelMin;
+let bounceVelHitIncrease = 120;
+let bounceVelMissDecrease = 80;
 let curBounceVelIdx = 0;
 let bounceHigher = false;
 let blink = false;
+let jumpHigher = false;
+let perfectJump = false;
+let zMax = 0;
+let zMaxDecayDelay = 0;
 
 // Trampoline
 let trampShakeAmount = 0;
@@ -19,12 +26,15 @@ let trampShakeDecayPct = 0.9;
 let trampShakeAngle = 0;
 let trampShakeAngleSpeed = 4000.0;
 
+// Camera
+let camScale = 0.7;
+
 // Input
 let touch = { x: 0, y: 0, active: false, up: false}
 let lastTouch = 0;
 
-canvas.addEventListener("mousedown", e => { touch.active = true }, false);
-canvas.addEventListener("mouseup", e => { touch.active = false, touch.up = true }, false);
+canvas.addEventListener("mousedown", e => { touch.active = true; touch.down = true; }, false);
+canvas.addEventListener("mouseup", e => { touch.active = false; touch.up = true; }, false);
 canvas.addEventListener("mousemove", e => { SetTouchPos(e); e.preventDefault(); }, false );
 canvas.addEventListener("touchstart", e => { SetTouchPos(e.touches[0]); touch.active = true; e.preventDefault(); }, false );
 canvas.addEventListener("touchend", e => { touch.active = false; e.preventDefault(); }, false );
@@ -34,7 +44,7 @@ canvas.addEventListener("touchmove", e => { SetTouchPos(e.touches[0]); e.prevent
 function Init()
 {
     playerZ = 0;
-    playerVel = bounceVel[0];
+    playerVel = bounceVel;
     playerAngle = 0;
 }
 
@@ -45,12 +55,19 @@ function GameLoop(curTime)
 
     UpdatePlayer(dt);
     UpdateTrampoline(dt);
+    touch.down = false;
     touch.up = false;
 
+    ctx.save();
+    ctx.scale(camScale, camScale);
+    let canvasWidthScaled = canvas.width/camScale;
+    let canvasHeightScaled = canvas.height/camScale;
+    ctx.translate((canvasWidthScaled - canvas.width)*0.5, (canvasHeightScaled - canvas.height));
     ctx.fillStyle = "#AADDFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height*0.7);
+    ctx.fillRect(-(canvasWidthScaled - canvas.width)*0.5, -(canvasHeightScaled - canvas.height), canvasWidthScaled, canvasHeightScaled);
     DrawTrampoline();
     DrawPlayer();
+    ctx.restore();
 
     window.requestAnimationFrame(GameLoop);
 }
@@ -63,29 +80,61 @@ function SetTouchPos(event)
 
 function UpdatePlayer(dt)
 {
-    playerVel += gravity * dt;
-    playerZ += playerVel * dt;
-    if (playerZ <= 0.0)
+    if (touch.down && playerZ <= 100)
     {
-        // Start trampoline shake
-        trampShakeAmount = 4.0;
-        trampShakeAngle = 0;
-
-        //curBounceVelIdx = Math.max(curBounceVelIdx - 1, 0);
-
-        playerZ = 0.0;
-        playerVel = bounceVel[curBounceVelIdx];
-    }
-
-    if (touch.up)
-    {
-        //console.log(playerZ);
-        if (playerZ < 10)
+        if (playerZ <= 25)
         {
-            curBounceVelIdx = Math.min(curBounceVelIdx + 1, bounceVel.length - 1);
-            playerVel = bounceVel[curBounceVelIdx];
+            perfectJump = true;
+        }
+
+        if (playerVel < 0)
+        {
+            jumpHigher = true;
+        }
+        else
+        {
+            bounceVel += perfectJump ? (bounceVelHitIncrease * 1.5) : bounceVelHitIncrease;
+            playerVel = bounceVel;
         }
     }
+
+    if (touch.active && playerZ > 100)
+    {
+        //playerAngle += 20.0;
+    }
+
+    if (playerZ <= 0.0)
+    {
+        playerVel += Math.abs(playerVel)*100 * dt;
+    }
+    else
+    {
+        playerVel += gravity * dt;
+    }
+
+    let prevPlayerZ = playerZ;
+    playerZ += playerVel * dt;
+
+    if (prevPlayerZ <= 0.0 && playerZ > 0.0)
+    {
+        // Start trampoline shake
+        trampShakeAmount = 16.0;
+        trampShakeAngle = 0;
+
+        if (jumpHigher)
+        {
+            jumpHigher = false;
+            bounceVel += perfectJump ? (bounceVelHitIncrease * 1.5) : bounceVelHitIncrease;
+        }
+
+        bounceVel = Math.max(bounceVel - bounceVelMissDecrease, bounceVelMin);
+
+        playerVel = bounceVel;
+        playerAngle = 0.0;
+    }
+
+    let desiredCamScale = Math.min(camScale, 300.0 / Math.max(playerZ, 300.0));
+    camScale += (desiredCamScale - camScale) * 0.2;
 }
 
 function UpdateTrampoline(dt)
@@ -122,13 +171,13 @@ function DrawRectangle(width, height, color)
 function DrawTrampoline()
 {
     ctx.save();
-    ctx.translate(canvas.width * 0.5, canvas.height - 30);
+    ctx.translate(canvas.width * 0.5, canvas.height - 120);
 
-    DrawRectangle(canvas.width, 60, "#00D846"); // Grass
-    DrawLine(-49, -5, -49, 20, "#000", 3);      // Left pole
-    DrawLine(49, -5, 49, 20, "#000", 3);        // Right pole
+    DrawRectangle(canvas.width/camScale, 240, "#00D846");     // Grass
+    DrawLine(-196, -20, -196, 80, "#000", 12);      // Left pole
+    DrawLine(196, -20, 196, 80, "#000", 12);        // Right pole
     ctx.translate(0, Math.sin(trampShakeAngle * Math.PI/180.0) * trampShakeAmount);
-    DrawLine(-50, 0, 50, 0, "#000", 3);         // Mesh
+    DrawLine(-200, 0, 200, 0, "#000", 12);         // Mesh
 
     ctx.restore();
 }
@@ -136,18 +185,18 @@ function DrawTrampoline()
 function DrawPlayer()
 {
     ctx.save();
-    ctx.translate(canvas.width * 0.5, (canvas.height - 47) - playerZ);
+    ctx.translate(canvas.width * 0.5, (canvas.height - 188) - playerZ);
     ctx.rotate(playerAngle * Math.PI/180.0);
     //playerAngle -= 1.0;
 
-    ctx.translate(0, -10);
-    DrawRectangle(20, 24, "#FF9600");       // Head
-    ctx.translate(-1, 1);
-    DrawRectangle(10, 10, "#FFF");          // Eye
-    ctx.translate(-2, 1);
-    DrawRectangle(4, 6, "#000");            // Pupil
-    ctx.translate(2, 10);
-    DrawLine(0, 0, 0, 15, "#000", 2);       // Leg
+    ctx.translate(0, -40);
+    DrawRectangle(80, 96, "#FF9600");       // Head
+    ctx.translate(-4, 4);
+    DrawRectangle(40, 40, "#FFF");          // Eye
+    ctx.translate(-8, 4);
+    DrawRectangle(16, 24, "#000");            // Pupil
+    ctx.translate(8, 40);
+    DrawLine(0, 0, 0, 60, "#000", 8);       // Leg
 
     ctx.restore();
 }
