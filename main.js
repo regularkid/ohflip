@@ -22,6 +22,8 @@ let zMaxDecayDelay = 0;
 let flipAngleVel = 0;
 let uprightFix = false;
 let totalAngleDelta = 0;
+let blinkDelay = 3.0;
+let blinkTime = 0.5;
 
 // Trampoline
 let trampShakeAmount = 0;
@@ -189,6 +191,14 @@ function UpdatePlayer(dt)
     {
         camScale += (0.7 - camScale) * 0.001;
     }
+
+    blinkDelay -= dt;
+    blinkTime -= dt;
+    if (blinkDelay <= 0.0)
+    {
+        blinkDelay = 1.0 + (Math.random()*3.0);
+        blinkTime = 0.1 + (Math.random()*0.1);
+    }
 }
 
 function UpdateTrampoline(dt)
@@ -244,10 +254,21 @@ function DrawPlayer()
 
     ctx.translate(0, -40);
     DrawRectangle(80, 96, "#FF9600");       // Head
-    ctx.translate(-4, 4);
-    DrawRectangle(40, 40, "#FFF");          // Eye
-    ctx.translate(-8, 4);
-    DrawRectangle(16, 24, "#000");            // Pupil
+    if (blinkTime > 0.0)
+    {
+        ctx.translate(-4, 4);
+        DrawRectangle(40, 40, "#000");          // Eye
+        ctx.translate(4, 4);
+        DrawRectangle(34, 34, "#FF9600");          // Eye
+        ctx.translate(-12, 0);
+    }
+    else
+    {
+        ctx.translate(-4, 4);
+        DrawRectangle(40, 40, "#FFF");          // Eye
+        ctx.translate(-8, 4);
+        DrawRectangle(16, 24, "#000");            // Pupil
+    }
 
     if (!touch.active)
     {
