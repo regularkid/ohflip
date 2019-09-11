@@ -8,7 +8,7 @@ let playerZ = 0;
 let playerVel = 0;
 let playerAngle = 0;
 let gravity = -1400;
-let bounceVelMin = 400;
+let bounceVelMin = 1000;
 let bounceVel = bounceVelMin;
 let bounceVelHitIncrease = 120;
 let bounceVelMissDecrease = 80;
@@ -19,6 +19,8 @@ let jumpHigher = false;
 let perfectJump = false;
 let zMax = 0;
 let zMaxDecayDelay = 0;
+let flipAngleVel = 0;
+let uprightFix = false;
 
 // Trampoline
 let trampShakeAmount = 0;
@@ -100,14 +102,38 @@ function UpdatePlayer(dt)
 
     if (touch.active && playerZ > 100)
     {
-        //playerAngle += 20.0;
-    }
-
-    if (playerZ <= 0.0)
-    {
-        playerVel += Math.abs(playerVel)*100 * dt;
+        uprightFix = false;
+        flipAngleVel += (720.0 - flipAngleVel)*0.1;
     }
     else
+    {
+        if (uprightFix)
+        {
+            playerAngle *= 0.9;
+            if (Math.abs(playerAngle) < 0.01)
+            {
+                uprightFix = false;
+            }
+        }
+        
+        flipAngleVel *= 0.9;
+    }
+
+    playerAngle += flipAngleVel * dt;
+    if (playerAngle >= 180.0)
+    {
+        playerAngle -= 360.0;
+    }
+    else if (playerAngle < -180.0)
+    {
+        playerAngle += 360;
+    }
+
+    // if (playerZ <= 0.0)
+    // {
+    //     playerVel += Math.abs(playerVel)*100.0 * dt;
+    // }
+    // else
     {
         playerVel += gravity * dt;
     }
@@ -115,22 +141,30 @@ function UpdatePlayer(dt)
     let prevPlayerZ = playerZ;
     playerZ += playerVel * dt;
 
-    if (prevPlayerZ <= 0.0 && playerZ > 0.0)
+    //if (prevPlayerZ <= 0.0 && playerZ > 0.0)
+    if (playerZ <= 0.0)
     {
         // Start trampoline shake
         trampShakeAmount = 16.0;
         trampShakeAngle = 0;
+
+        jumpHigher = Math.abs(playerAngle) < 20.0;
+        perfectJump = Math.abs(playerAngle) < 8.0;
 
         if (jumpHigher)
         {
             jumpHigher = false;
             bounceVel += perfectJump ? (bounceVelHitIncrease * 1.5) : bounceVelHitIncrease;
         }
+        else
+        {
+            bounceVel = Math.max(bounceVel - bounceVelMissDecrease, bounceVelMin);
+        }
 
-        bounceVel = Math.max(bounceVel - bounceVelMissDecrease, bounceVelMin);
-
+        bounceVel = 1000;
+        playerZ = 0.0;
         playerVel = bounceVel;
-        playerAngle = 0.0;
+        uprightFix = true;
     }
 
     let desiredCamScale = Math.min(camScale, 300.0 / Math.max(playerZ, 300.0));
@@ -187,7 +221,6 @@ function DrawPlayer()
     ctx.save();
     ctx.translate(canvas.width * 0.5, (canvas.height - 188) - playerZ);
     ctx.rotate(playerAngle * Math.PI/180.0);
-    //playerAngle -= 1.0;
 
     ctx.translate(0, -40);
     DrawRectangle(80, 96, "#FF9600");       // Head
@@ -195,8 +228,18 @@ function DrawPlayer()
     DrawRectangle(40, 40, "#FFF");          // Eye
     ctx.translate(-8, 4);
     DrawRectangle(16, 24, "#000");            // Pupil
-    ctx.translate(8, 40);
-    DrawLine(0, 0, 0, 60, "#000", 8);       // Leg
+
+    if (!touch.active)
+    {
+        ctx.translate(8, 40);
+        DrawLine(0, 0, 0, 60, "#000", 8);       // Leg
+    }
+    else
+    {
+        ctx.translate(8, 40);
+        DrawLine(0, 0, -30, 20, "#000", 8);       // Leg (upper)
+        DrawLine(-30, 20, 0, 40, "#000", 8);       // Leg (lower)
+    }
 
     ctx.restore();
 }
