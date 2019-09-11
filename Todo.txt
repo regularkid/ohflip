@@ -1,0 +1,46 @@
+Pupil movement
+Remove tap to jump logic
+Add reset func
+Remove excess input junk (pos is not needed)
+Add miss fall out
+Add main menu
+Add height + max height + #flips + max flips
+Add missions
+    - Do a flip
+    - do a double
+    - do a triple
+    - do a quad
+    - do a 5x flip
+    - do a 6x flip
+    - do a 7x flip
+    - do a 8x flip
+    - do a 9x flip
+    - do a 10x flip
+    - do a flip before reaching peak
+    - do a flip after reaching peak
+    - do a double flip before reaching peak
+    - do a double flip after reaching peak
+    - hit a bird
+    - see a building
+    - go above a cloud
+    - do a double flip with a pause in between
+    - land perfectly
+    - do 3 flips without falling off
+    - do 5 flips without falling off
+    - land during a flip
+    - do 2 flips in a row (consecutive jumps)
+    - do 3 flips in a row (consecutive jumps)
+    - do 5 flips in a row (consecutive jumps)
+    - hit the moon
+    - land on your head
+    - land on your back
+    - land on your face
+Adjust zoom out so it's less
+Add good / perfect / miss text popouts
+Add screen shake on good / perfect
+Sounds - good/perfect/miss/goal complete
+Add leg rendering interpolation?
+Fix cam scale coming back down to normal (stops sometimes)
+Add that num flips = multiplier on jump height
+Add instructions
+Add x2 x3 x4 etc. multiplier text popouts on flips

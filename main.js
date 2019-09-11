@@ -64,13 +64,18 @@ function GameLoop(curTime)
     touch.down = false;
     touch.up = false;
 
+    // Clear background
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#AADDFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
     ctx.save();
     ctx.scale(camScale, camScale);
     let canvasWidthScaled = canvas.width/camScale;
     let canvasHeightScaled = canvas.height/camScale;
     ctx.translate((canvasWidthScaled - canvas.width)*0.5, (canvasHeightScaled - canvas.height));
-    ctx.fillStyle = "#AADDFF";
-    ctx.fillRect(-(canvasWidthScaled - canvas.width)*0.5, -(canvasHeightScaled - canvas.height), canvasWidthScaled, canvasHeightScaled);
     DrawTrampoline();
     DrawPlayer();
     ctx.restore();
@@ -175,7 +180,7 @@ function UpdatePlayer(dt)
         totalAngleDelta = 0;
     }
 
-    let desiredCamScale = 300.0 / Math.max(playerZ, 300.0);
+    let desiredCamScale = (300.0 / Math.max(playerZ, 300.0)) * 1.5;
     if (desiredCamScale < camScale)
     {
         camDecayDelay = 3.0;
