@@ -1,7 +1,7 @@
 Pupil movement
-Remove tap to jump logic
-Add reset func
-Remove excess input junk (pos is not needed)
+---DONE--- Remove tap to jump logic
+---DONE--- Add reset func
+---DONE--- Remove excess input junk (pos is not needed)
 Add miss fall out
 Add main menu
 Add height + max height + #flips + max flips
@@ -35,9 +35,9 @@ Add missions
     - land on your head
     - land on your back
     - land on your face
-Adjust zoom out so it's less
+---DONE--- Adjust zoom out so it's less
 Add good / perfect / miss text popouts
-Add screen shake on good / perfect
+---DONE--- Add screen shake on good / perfect
 Sounds - good/perfect/miss/goal complete
 Add leg rendering interpolation?
 Fix cam scale coming back down to normal (stops sometimes)
