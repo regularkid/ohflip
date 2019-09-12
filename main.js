@@ -23,6 +23,8 @@ let blinkTime = 0.5;
 let fallOut = false;
 let fallOutTime = 0.0;
 let fallOutLeft = false;
+let totalFlips = 0;
+let flipsThisBounce = 0;
 
 // Trampoline
 let trampShakeAmount = 0;
@@ -41,6 +43,10 @@ let touch = false
 
 // Menu
 let mainMenu = true;
+let mainMenuTouch = false;
+
+// UI
+let popups = [];
 
 canvas.addEventListener("mousedown", e => { touch = true }, false);
 canvas.addEventListener("mouseup", e => { touch = false }, false);
@@ -63,6 +69,8 @@ function Reset()
     camScale = 0.7;
     camDecayDelay = 0;
     fallOut = false;
+    totalFlips = 0;
+    flipsThisBounce = 0;
 }
 
 function GameLoop(curTime)
@@ -70,10 +78,10 @@ function GameLoop(curTime)
     let dt = Math.min((curTime - (lastFrameTime || curTime)) / 1000.0, 0.2);  // Cap to 200ms (5fps)
     lastFrameTime = curTime;
 
+    UpdateUI(dt);
     UpdatePlayer(dt);
     UpdateCamera(dt);
     UpdateTrampoline(dt);
-    UpdateUI(dt);
 
     // Clear background
     ctx.save();
@@ -100,13 +108,15 @@ function GameLoop(curTime)
 
 function UpdatePlayer(dt)
 {
+    let playerTouch = touch && !mainMenuTouch;
+
     // Falling out?
     if (fallOut)
     {
         let fallOutPct = fallOutTime / 1.0;
-        playerX = Math.cos(fallOutPct * Math.PI * 0.5) * 400.0 * (fallOutLeft ? -1.0 : 1.0);
-        playerY = Math.sin(fallOutPct * Math.PI) * 200.0;
-        playerAngle += 600.0 * dt * (fallOutLeft ? -1.0 : 1.0);
+        playerX = Math.cos(fallOutPct * Math.PI * 0.5) * 400.0 * (fallOutLeft ? -1.0 : 1.0) * bounceVel*0.001;
+        playerY = Math.sin(fallOutPct * Math.PI) * 200.0 * bounceVel*0.001;
+        playerAngle += 800.0 * dt * (fallOutLeft ? -1.0 : 1.0);
 
         fallOutTime -= dt;
         if (fallOutTime <= 0.0)
@@ -117,7 +127,7 @@ function UpdatePlayer(dt)
     }
 
     // Flipping?
-    if (touch && playerY > 100)
+    if (playerTouch && playerY > 100)
     {
         uprightFix = false;
         flipAngleVel += (720.0 - flipAngleVel)*0.1;
@@ -141,6 +151,7 @@ function UpdatePlayer(dt)
     let prevPlayerAngle = playerAngle;
     playerAngle += flipAngleVel * dt;
     totalAngleDeltaThisBounce += playerAngle - prevPlayerAngle;
+    flipsThisBounce = Math.floor((totalAngleDeltaThisBounce + 90.0) / 360.0);
     if (playerAngle >= 180.0)
     {
         playerAngle -= 360.0;
@@ -166,13 +177,15 @@ function UpdatePlayer(dt)
         {
             fallOut = true;
             fallOutTime = 1.0;
-            fallOutLeft = playerAngle < 0.0;
+            fallOutLeft = Math.random() < 0.5;
+
+            AddPopup(canvas.width*0.5 + 100, canvas.height - 100, "miss", "#F42");
         }
         else
         {
             // Set bounce velocity
             let didAFlip = totalAngleDeltaThisBounce >= 270;
-            let perfectJump = Math.abs(playerAngle) < 10.0;
+            let perfectJump = Math.abs(playerAngle) < 6.5;
             if (didAFlip)
             {
                 bounceVel += perfectJump ? (bounceVelHitIncrease * 1.5) : bounceVelHitIncrease;
@@ -182,9 +195,23 @@ function UpdatePlayer(dt)
                 bounceVel = Math.max(bounceVel - bounceVelMissDecrease, bounceVelMin);
             }
 
-            if (perfectJump)
+            if (didAFlip && perfectJump && !mainMenu)
             {
                 camScaleBounce = 0.025;
+            }
+
+            if (didAFlip)
+            {
+                totalFlips += flipsThisBounce;
+
+                if (perfectJump)
+                {
+                    AddPopup(canvas.width*0.5 + 100, canvas.height - 100, "perfect!", "#FF0");
+                }
+                else
+                {
+                    AddPopup(canvas.width*0.5 + 100, canvas.height - 100, "good", "#0F4");
+                }
             }
         }
 
@@ -193,6 +220,7 @@ function UpdatePlayer(dt)
         playerVel = bounceVel;
         uprightFix = true;
         totalAngleDeltaThisBounce = 0;
+        flipsThisBounce = 0;
     }
 
     // Update blink
@@ -240,10 +268,29 @@ function UpdateTrampoline(dt)
 
 function UpdateUI(dt)
 {
+    // Main menu touch logic
     if (touch)
     {
+        if (mainMenu)
+        {
+            mainMenuTouch = true;
+        }
         mainMenu = false;
     }
+    else
+    {
+        mainMenuTouch = false;
+    }
+
+    // Update popups
+    popups.forEach((popup, index, object) =>
+    {
+        popup.time += dt;
+        if (popup.time >= 1.0)
+        {
+            object.splice(index, 1);
+        }
+    });
 }
 
 function DrawLine(x1, y1, x2, y2, color, width)
@@ -325,7 +372,7 @@ function DrawPlayer()
         DrawRectangle(16, 24, "#000");      // Pupil
     }
 
-    if (!touch)
+    if (!touch || mainMenuTouch)
     {
         ctx.translate(8, 40);
         DrawLine(0, 0, 0, 60, "#000", 8);   // Leg
@@ -342,16 +389,52 @@ function DrawPlayer()
 
 function DrawUI()
 {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
     if (mainMenu)
     {
         let titleTxt = "oh, flip";
-        DrawText(titleTxt, canvas.width*0.5, -60, -5*Math.PI/180.0, 170, "center", "#000");
-        DrawText(titleTxt, (canvas.width*0.5) - 10, -65, -5*Math.PI/180.0, 170, "center", "#FF9600");
+        DrawText(titleTxt, canvas.width*0.5, 160, -5*Math.PI/180.0, 170, "center", "#000");
+        DrawText(titleTxt, (canvas.width*0.5) - 10, 155, -5*Math.PI/180.0, 170, "center", "#FF9600");
 
-        let subtitleText = "a game about backflips";
-        DrawText(subtitleText, (canvas.width*0.5), 35, -5*Math.PI/180.0, 50, "center", "#000");
-        DrawText(subtitleText, (canvas.width*0.5) - 4, 30, -5*Math.PI/180.0, 50, "center", "#FFF");
+        let subtitleTxt = "a game about backflips";
+        DrawText(subtitleTxt, (canvas.width*0.5), 240, -5*Math.PI/180.0, 50, "center", "#000");
+        DrawText(subtitleTxt, (canvas.width*0.5) - 4, 235, -5*Math.PI/180.0, 50, "center", "#FFF");
+
+        let instructionsTxt = "land flips to gain height - complete goals to feel good";
+        DrawText(instructionsTxt, (canvas.width*0.5), canvas.height - 20, 0.0, 25, "center", "#000");
+        DrawText(instructionsTxt, (canvas.width*0.5) - 3, canvas.height - 23, 0.0, 25, "center", "#FFF");
     }
+    else
+    {
+        let heightFt = Math.floor(playerY / 40.0);
+        let heightTxt = `Height: ${heightFt} ft`;
+        DrawText(heightTxt, 20, 30, 0.0, 25, "left", "#000");
+        DrawText(heightTxt, 18, 28, 0.0, 25, "left", "#FFF");
+
+        let flipsTxt = `Total Flips: ${totalFlips}`;
+        DrawText(flipsTxt, 20, 62, 0.0, 25, "left", "#000");
+        DrawText(flipsTxt, 18, 60, 0.0, 25, "left", "#FFF");
+    }
+
+    // Draw popups
+    popups.forEach(popup =>
+    {
+        let popupPct = Math.min(popup.time / 0.1, 1.0);
+        let offsetAnglePct = Math.min(popup.time / 0.4, 1.0);
+        let xOffset = Math.sin(offsetAnglePct * Math.PI * 0.5) * 25.0;
+        let yOffset = Math.sin(offsetAnglePct * Math.PI * 0.5) * 50.0;
+        DrawText(popup.text, popup.x + xOffset, popup.y - yOffset, -5*Math.PI/180.0, 30 + Math.sin(popupPct * Math.PI * 0.75) * 25.0, "center", "#000");
+        DrawText(popup.text, (popup.x + xOffset) - 3, (popup.y - yOffset) - 3, -5*Math.PI/180.0, 30 + Math.sin(popupPct * Math.PI * 0.75) * 25.0, "center", popup.color);
+    });
+
+    ctx.restore();
+}
+
+function AddPopup(x, y, text, color)
+{
+    popups.push({x: x, y: y, text: text, color: color, time: 0.0});
 }
 
 Reset();
