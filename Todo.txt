@@ -5,6 +5,7 @@
 ---DONE--- Add miss fall out
 ---DONE--- Add main menu
 ---DONE--- Add height + max height + #flips + max flips
+Fix cam zooming so it doesn't go out as far
 Add missions
     - Do a flip
     - do a double

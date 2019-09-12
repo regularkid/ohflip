@@ -27,6 +27,7 @@ let fallOutTime = 0.0;
 let fallOutLeft = false;
 let totalFlips = 0;
 let flipsThisBounce = 0;
+let flipsLandedThisBounce = 0;
 
 // Trampoline
 let trampShakeAmount = 0;
@@ -49,6 +50,12 @@ let mainMenuTouch = false;
 
 // UI
 let popups = [];
+
+// Goals
+let goals = [];
+let goalIdx = 0;
+goals.push({text: "Do a flip", func: DidAFlipThisBounce, param: 1});
+goals.push({text: "Do a double flip", func: DidAFlipThisBounce, param: 1});
 
 document.addEventListener("mousedown", e => { touch = true }, false);
 document.addEventListener("mouseup", e => { touch = false }, false);
@@ -73,6 +80,7 @@ function Reset()
     fallOut = false;
     totalFlips = 0;
     flipsThisBounce = 0;
+    flipsLandedThisBounce = 0;
 }
 
 function GameLoop(curTime)
@@ -215,6 +223,7 @@ function UpdatePlayer(dt)
 
             if (didAFlip)
             {
+                flipsLandedThisBounce = flipsThisBounce;
                 totalFlips += flipsThisBounce;
 
                 if (perfectJump)
@@ -228,11 +237,14 @@ function UpdatePlayer(dt)
             }
         }
 
+        CheckGoals();
+
         // Reset for new bounce
         playerY = 0.0;
         playerVel = bounceVel;
         uprightFix = true;
         totalAngleDeltaThisBounce = 0;
+        flipsLandedThisBounce = 0;
         flipsThisBounce = 0;
     }
 
@@ -249,7 +261,7 @@ function UpdatePlayer(dt)
 function UpdateCamera(dt)
 {
     // Calculate desired scale
-    let desiredCamScale = (300.0 / Math.max(playerY, 300.0)) * 1.4;
+    let desiredCamScale = (280.0 / Math.max(playerY, 280.0)) * 1.5;
     if (desiredCamScale < camScale)
     {
         camDecayDelay = 3.0;
@@ -364,7 +376,7 @@ function DrawTrampoline()
 function DrawPlayer()
 {
     ctx.save();
-    ctx.translate(canvas.width * 0.5 + playerX, (canvas.height - 188) - playerY);
+    ctx.translate(canvas.width * 0.5 + playerX, (canvas.height - 170) - playerY);
     ctx.rotate(playerAngle * Math.PI/180.0);
 
     ctx.translate(0, -40);
@@ -426,10 +438,10 @@ function DrawUI()
     else
     {
         let heightFt = Math.floor(playerY / 40.0);
-        let maxHeightFt = localStorage.getItem("maxHeightFt");
+        let maxHeightFt = localStorage.getItem("ohflip.maxHeightFt");
         if (maxHeightFt === null || heightFt > maxHeightFt)
         {
-            localStorage.setItem("maxHeightFt", heightFt);
+            localStorage.setItem("ohflip.maxHeightFt", heightFt);
             maxHeightFt = heightFt;
         }
 
@@ -437,16 +449,19 @@ function DrawUI()
         DrawText(heightTxt, 12, 27, 0.0, 20, "left", "#000");
         //DrawText(heightTxt, 18, 28, 0.0, 25, "left", "#AAF");
 
-        let maxTotalFlips = localStorage.getItem("maxTotalFlips");
+        let maxTotalFlips = localStorage.getItem("ohflip.maxTotalFlips");
         if (maxTotalFlips === null || totalFlips > maxTotalFlips)
         {
-            localStorage.setItem("maxTotalFlips", totalFlips);
+            localStorage.setItem("ohflip.maxTotalFlips", totalFlips);
             maxTotalFlips = totalFlips;
         }
 
         let flipsTxt = `Flips: ${totalFlips} (Best: ${maxTotalFlips})`;
         DrawText(flipsTxt, 12, 50, 0.0, 20, "left", "#000");
         //DrawText(flipsTxt, 18, 60, 0.0, 25, "left", "#FFF");
+
+        DrawText(`Goal #${goalIdx + 1}:`, canvas.width - 12, 27, 0.0, 20, "right", "#000");
+        DrawText(goals[goalIdx].text, canvas.width - 12, 50, 0.0, 20, "right", "#000");
     }
 
     // Draw popups
@@ -490,6 +505,24 @@ function FitToScreen()
     }
 
     window.scrollTo(0, 0);
+}
+
+function CheckGoals()
+{
+    if (goals[goalIdx].func(goals[goalIdx]))
+    {
+        console.log("SUCCESS!");
+    }
+}
+
+function DidAFlipThisBounce(goal)
+{
+    if (flipsLandedThisBounce >= goal.param)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 Reset();
