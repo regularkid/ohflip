@@ -4,6 +4,8 @@ let ctx = canvas.getContext("2d", { alpha: false });
 let canvasWidthScaled = canvas.width;
 let canvasHeightScaled = canvas.height;
 let lastFrameTime;
+let actualWidth = -1;
+let actualHeight = -1;
 
 // Player
 let playerX = 0;
@@ -48,11 +50,11 @@ let mainMenuTouch = false;
 // UI
 let popups = [];
 
-canvas.addEventListener("mousedown", e => { touch = true }, false);
-canvas.addEventListener("mouseup", e => { touch = false }, false);
-canvas.addEventListener("touchstart", e => { touch = true; e.preventDefault(); }, false );
-canvas.addEventListener("touchend", e => { touch = false; e.preventDefault(); }, false );
-canvas.addEventListener("touchcancel", e => { touch = false; e.preventDefault(); }, false );
+document.addEventListener("mousedown", e => { touch = true }, false);
+document.addEventListener("mouseup", e => { touch = false }, false);
+document.addEventListener("touchstart", e => { touch = true; e.preventDefault(); }, false );
+document.addEventListener("touchend", e => { touch = false; e.preventDefault(); }, false );
+document.addEventListener("touchcancel", e => { touch = false; e.preventDefault(); }, false );
 
 function Reset()
 {
@@ -77,6 +79,8 @@ function GameLoop(curTime)
 {
     let dt = Math.min((curTime - (lastFrameTime || curTime)) / 1000.0, 0.2);  // Cap to 200ms (5fps)
     lastFrameTime = curTime;
+
+    FitToScreen();
 
     UpdateUI(dt);
     UpdatePlayer(dt);
@@ -462,6 +466,30 @@ function DrawUI()
 function AddPopup(x, y, text, color)
 {
     popups.push({x: x, y: y, text: text, color: color, time: 0.0});
+}
+
+function FitToScreen()
+{
+    let aspectRatio = canvas.width / canvas.height;
+    let newWidth = window.innerWidth;
+    let newHeight = window.innerWidth / aspectRatio;
+
+    if (newHeight > window.innerHeight)
+    {
+        newHeight = window.innerHeight;
+        newWidth = newHeight * aspectRatio;
+    }
+
+    if (newWidth !== actualWidth || newHeight !== actualHeight)
+    {
+        canvas.style.width = newWidth+"px";
+        canvas.style.height = newHeight+"px";
+
+        actualWidth = newWidth;
+        actualHeight = newHeight;
+    }
+
+    window.scrollTo(0, 0);
 }
 
 Reset();
