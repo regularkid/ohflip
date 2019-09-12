@@ -365,7 +365,8 @@ function DrawPlayer()
 
     ctx.translate(0, -40);
     DrawRectangle(80, 96, "#FF9600");       // Head
-    if (blinkTime > 0.0)
+    ctx.save();
+    if (blinkTime > 0.0 || fallOut)
     {
         ctx.translate(-4, 4);
         DrawRectangle(40, 40, "#000");      // Eye
@@ -377,10 +378,13 @@ function DrawPlayer()
     {
         ctx.translate(-4, 4);
         DrawRectangle(40, 40, "#FFF");      // Eye
-        ctx.translate(-8, 4);
+        let pupilOffset = Math.max(Math.min((playerVel / 1000), 1.0), 0.0) * 7.0;
+        ctx.translate(-8, 4 - pupilOffset);
         DrawRectangle(16, 24, "#000");      // Pupil
     }
+    ctx.restore();
 
+    ctx.translate(-4, 4);
     if (!touch || mainMenuTouch)
     {
         ctx.translate(8, 40);
@@ -418,13 +422,27 @@ function DrawUI()
     else
     {
         let heightFt = Math.floor(playerY / 40.0);
-        let heightTxt = `Height: ${heightFt} ft`;
-        DrawText(heightTxt, 20, 30, 0.0, 25, "left", "#000");
-        DrawText(heightTxt, 18, 28, 0.0, 25, "left", "#FFF");
+        let maxHeightFt = localStorage.getItem("maxHeightFt");
+        if (maxHeightFt === null || heightFt > maxHeightFt)
+        {
+            localStorage.setItem("maxHeightFt", heightFt);
+            maxHeightFt = heightFt;
+        }
 
-        let flipsTxt = `Total Flips: ${totalFlips}`;
-        DrawText(flipsTxt, 20, 62, 0.0, 25, "left", "#000");
-        DrawText(flipsTxt, 18, 60, 0.0, 25, "left", "#FFF");
+        let heightTxt = `Height: ${heightFt} ft (Best: ${maxHeightFt} ft)`;
+        DrawText(heightTxt, 12, 27, 0.0, 20, "left", "#000");
+        //DrawText(heightTxt, 18, 28, 0.0, 25, "left", "#AAF");
+
+        let maxTotalFlips = localStorage.getItem("maxTotalFlips");
+        if (maxTotalFlips === null || totalFlips > maxTotalFlips)
+        {
+            localStorage.setItem("maxTotalFlips", totalFlips);
+            maxTotalFlips = totalFlips;
+        }
+
+        let flipsTxt = `Flips: ${totalFlips} (Best: ${maxTotalFlips})`;
+        DrawText(flipsTxt, 12, 50, 0.0, 20, "left", "#000");
+        //DrawText(flipsTxt, 18, 60, 0.0, 25, "left", "#FFF");
     }
 
     // Draw popups

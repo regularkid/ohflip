@@ -1,10 +1,10 @@
-Pupil movement
+---DONE--- Pupil movement
 ---DONE--- Remove tap to jump logic
 ---DONE--- Add reset func
 ---DONE--- Remove excess input junk (pos is not needed)
 ---DONE--- Add miss fall out
 ---DONE--- Add main menu
-Add height + max height + #flips + max flips
+---DONE--- Add height + max height + #flips + max flips
 Add missions
     - Do a flip
     - do a double
@@ -35,12 +35,13 @@ Add missions
     - land on your head
     - land on your back
     - land on your face
+    - 3 perfects in a row
 ---DONE--- Adjust zoom out so it's less
-Add good / perfect / miss text popouts
+---DONE--- Add good / perfect / miss text popouts
 ---DONE--- Add screen shake on good / perfect
 Sounds - good/perfect/miss/goal complete
-Add leg rendering interpolation?
-Fix cam scale coming back down to normal (stops sometimes)
-Add that num flips = multiplier on jump height
+---NOPE--- Add leg rendering interpolation?
+---NOPE--- Fix cam scale coming back down to normal (stops sometimes)
+---DONE--- Add that num flips = multiplier on jump height
 ---DONE--- Add instructions
-Add x2 x3 x4 etc. multiplier text popouts on flips
+---DONE--- Add x2 x3 x4 etc. multiplier text popouts on flips
