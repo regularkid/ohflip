@@ -147,11 +147,18 @@ function UpdatePlayer(dt)
         flipAngleVel *= 0.7;
     }
 
-    // Clamp angle to -180 -> 180
+    // Calculate flips
     let prevPlayerAngle = playerAngle;
     playerAngle += flipAngleVel * dt;
     totalAngleDeltaThisBounce += playerAngle - prevPlayerAngle;
+    let prevFlipsThisBounce = flipsThisBounce;
     flipsThisBounce = Math.floor((totalAngleDeltaThisBounce + 90.0) / 360.0);
+    if (flipsThisBounce > prevFlipsThisBounce)
+    {
+        AddPopup(canvas.width*0.5 + 100, canvas.height - 200, `x${flipsThisBounce}`, "#D37CFF");
+    }
+
+    // Clamp angle to -180 -> 180
     if (playerAngle >= 180.0)
     {
         playerAngle -= 360.0;
@@ -188,7 +195,9 @@ function UpdatePlayer(dt)
             let perfectJump = Math.abs(playerAngle) < 6.5;
             if (didAFlip)
             {
-                bounceVel += perfectJump ? (bounceVelHitIncrease * 1.5) : bounceVelHitIncrease;
+                let flipMult = 1.0 + (flipsThisBounce / 5)*0.5;
+                let bounceVelIncrease = perfectJump ? (bounceVelHitIncrease * 1.5) : bounceVelHitIncrease;
+                bounceVel += bounceVelIncrease * flipMult;
             }
             else
             {
@@ -286,7 +295,7 @@ function UpdateUI(dt)
     popups.forEach((popup, index, object) =>
     {
         popup.time += dt;
-        if (popup.time >= 1.0)
+        if (popup.time >= 0.5)
         {
             object.splice(index, 1);
         }
