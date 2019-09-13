@@ -84,7 +84,6 @@ goals.push({text: "Reach a height of 250 ft", func: ReachedHeight, param: 250});
 goals.push({text: "Land perfectly 5 times in a row", func: PerfectStreakCheck, param: 5});
 goals.push({text: "Do a x10 flip", func: DidAFlipThisBounce, param: 7});
 goals.push({text: "Reach a height of 500 ft", func: ReachedHeight, param: 500});
-goalIdx = goals.length;
 let goalCompleteTime = 0.0;
 
 document.addEventListener("mousedown", e => { touch = true; SetTouchPos(e); }, false);
@@ -350,6 +349,10 @@ function UpdateCamera(dt)
         camDecayDelay -= dt;
     }    
     desiredCamScale = Math.min(camScale, desiredCamScale);
+    if (desiredCamScale < 0.5)
+    {
+        desiredCamScale = Math.pow(desiredCamScale, 0.97);
+    }
 
     // Lerp to it
     camScale += (desiredCamScale - camScale) * 0.2;
