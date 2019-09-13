@@ -141,7 +141,7 @@ function GameLoop(curTime)
     let dt = Math.min((curTime - (lastFrameTime || curTime)) / 1000.0, 0.2);  // Cap to 200ms (5fps)
     lastFrameTime = curTime;
 
-    FitToScreen();
+    //FitToScreen();
 
     UpdateUI(dt);
     UpdatePlayer(dt);
