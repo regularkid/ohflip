@@ -531,7 +531,7 @@ function DrawUI()
 
     if (mainMenu)
     {
-        let titleTxt = "oh, flip";
+        let titleTxt = "oh, flip!";
         DrawText(titleTxt, canvas.width*0.5, 160, -5*Math.PI/180.0, 170, "center", "#000");
         DrawText(titleTxt, (canvas.width*0.5) - 10, 155, -5*Math.PI/180.0, 170, "center", "#FF9600");
 
