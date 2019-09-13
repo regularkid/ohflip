@@ -28,6 +28,13 @@ let fallOutLeft = false;
 let totalFlips = 0;
 let flipsThisBounce = 0;
 let flipsLandedThisBounce = 0;
+let flipsBeforePeak = 0;
+let flipsAfterPeak = 0;
+let perfectJump = false;
+let didAFlipStreak = 0;
+let perfectStreak = 0;
+let didLandOnHead = false;
+let maxHeightThisBounce = 0;
 
 // Trampoline
 let trampShakeAmount = 0;
@@ -43,6 +50,8 @@ let camScaleBounceDecayPct = 0.8;
 
 // Input
 let touch = false
+let touchX = 0;
+let touchY = 0;
 
 // Menu
 let mainMenu = true;
@@ -53,15 +62,52 @@ let popups = [];
 
 // Goals
 let goals = [];
-let goalIdx = 0;
+let goalIdx = parseInt(localStorage.getItem("ohflip.goalIdx")) || 0;
 goals.push({text: "Do a flip", func: DidAFlipThisBounce, param: 1});
-goals.push({text: "Do a double flip", func: DidAFlipThisBounce, param: 1});
+goals.push({text: "Land 2 flips in a row", func: FlipStreakCheck, param: 2});
+goals.push({text: "Land perfectly", func: LandedPerfectly, param: 1});
+goals.push({text: "Reach a height of 20 ft", func: ReachedHeight, param: 20});
+goals.push({text: "Do a double flip", func: DidAFlipThisBounce, param: 2});
+goals.push({text: "Land 3 flips in a row", func: FlipStreakCheck, param: 3});
+goals.push({text: "Land on your head", func: LandedOnHead, param: 1});
+goals.push({text: "Do a triple flip", func: DidAFlipThisBounce, param: 3});
+goals.push({text: "Land perfectly 2 times in a row", func: PerfectStreakCheck, param: 2});
+goals.push({text: "Reach a height of 50 ft", func: ReachedHeight, param: 5});
+goals.push({text: "Land 4 flips in a row", func: FlipStreakCheck, param: 4});
+goals.push({text: "Do a quad flip", func: DidAFlipThisBounce, param: 4});
+goals.push({text: "Land 5 flips in a row", func: FlipStreakCheck, param: 5});
+goals.push({text: "Land perfectly 3 times in a row", func: PerfectStreakCheck, param: 3});
+goals.push({text: "Reach a height of 100 ft", func: ReachedHeight, param: 10});
+goals.push({text: "Do a x5 flip", func: DidAFlipThisBounce, param: 5});
+goals.push({text: "Land 10 flips in a row", func: FlipStreakCheck, param: 10});
+goals.push({text: "Reach a height of 250 ft", func: ReachedHeight, param: 250});
+goals.push({text: "Land perfectly 5 times in a row", func: PerfectStreakCheck, param: 5});
+goals.push({text: "Do a x10 flip", func: DidAFlipThisBounce, param: 7});
+goals.push({text: "Reach a height of 500 ft", func: ReachedHeight, param: 500});
+goalIdx = goals.length;
+let goalCompleteTime = 0.0;
 
-document.addEventListener("mousedown", e => { touch = true }, false);
-document.addEventListener("mouseup", e => { touch = false }, false);
-document.addEventListener("touchstart", e => { touch = true; e.preventDefault(); }, false );
-document.addEventListener("touchend", e => { touch = false; e.preventDefault(); }, false );
-document.addEventListener("touchcancel", e => { touch = false; e.preventDefault(); }, false );
+document.addEventListener("mousedown", e => { touch = true; SetTouchPos(e); }, false);
+document.addEventListener("mouseup", e => { touch = false; SetTouchPos(e); }, false);
+document.addEventListener("touchstart", e => { touch = true; SetTouchPos(e); e.preventDefault(); }, false );
+document.addEventListener("touchend", e => { touch = false; SetTouchPos(e); e.preventDefault(); }, false );
+document.addEventListener("touchcancel", e => { touch = false; SetTouchPos(e); e.preventDefault(); }, false );
+document.addEventListener("keydown", e =>
+{
+    if (e.altKey && e.code === "KeyR")
+    {
+        localStorage.setItem("ohflip.maxHeightFt", 0);
+        localStorage.setItem("ohflip.maxTotalFlips", 0);
+        localStorage.setItem("ohflip.goalIdx", 0);
+        goalIdx = 0;
+    }
+});
+
+function SetTouchPos(event)
+{
+    touchX = event.pageX - canvas.offsetLeft;
+    touchY = event.pageY - canvas.offsetTop;
+}
 
 function Reset()
 {
@@ -81,6 +127,14 @@ function Reset()
     totalFlips = 0;
     flipsThisBounce = 0;
     flipsLandedThisBounce = 0;
+    goalCompleteTime = 0.0;
+    flipsBeforePeak = 0;
+    flipsAfterPeak = 0;
+    perfectJump = false;
+    didAFlipStreak = 0;
+    perfectStreak = 0;
+    didLandOnHead = false;
+    maxHeightThisBounce = 0;
 }
 
 function GameLoop(curTime)
@@ -168,6 +222,11 @@ function UpdatePlayer(dt)
     if (flipsThisBounce > prevFlipsThisBounce)
     {
         AddPopup(canvas.width*0.5 + 100, canvas.height - 200, `x${flipsThisBounce}`, "#D37CFF");
+
+        if (playerVel > 0.0)
+        {
+            flipsBeforePeak++;
+        }
     }
 
     // Clamp angle to -180 -> 180
@@ -183,6 +242,7 @@ function UpdatePlayer(dt)
     // Move player
     playerVel += gravity * dt;
     playerY += playerVel * dt;
+    maxHeightThisBounce = Math.max(playerY, maxHeightThisBounce);
 
     // Hit trampoline?
     if (playerY <= 0.0)
@@ -199,12 +259,17 @@ function UpdatePlayer(dt)
             fallOutLeft = Math.random() < 0.5;
 
             AddPopup(canvas.width*0.5 + 100, canvas.height - 100, "miss", "#F42");
+
+            if (Math.abs(playerAngle) > 145.0)
+            {
+                didLandOnHead = true;
+            }
         }
         else
         {
             // Set bounce velocity
             let didAFlip = totalAngleDeltaThisBounce >= 270;
-            let perfectJump = Math.abs(playerAngle) < 6.5;
+            perfectJump = Math.abs(playerAngle) < 6.5;
             if (didAFlip)
             {
                 let flipMult = 1.0 + (flipsThisBounce / 5)*0.5;
@@ -225,6 +290,11 @@ function UpdatePlayer(dt)
             {
                 flipsLandedThisBounce = flipsThisBounce;
                 totalFlips += flipsThisBounce;
+                didAFlipStreak++;
+                if (perfectJump)
+                {
+                    perfectStreak++;
+                }
 
                 if (perfectJump)
                 {
@@ -234,6 +304,11 @@ function UpdatePlayer(dt)
                 {
                     AddPopup(canvas.width*0.5 + 100, canvas.height - 100, "good", "#0F4");
                 }
+            }
+            else
+            {
+                didAFlipStreak = 0;
+                perfectStreak = 0;
             }
         }
 
@@ -246,6 +321,10 @@ function UpdatePlayer(dt)
         totalAngleDeltaThisBounce = 0;
         flipsLandedThisBounce = 0;
         flipsThisBounce = 0;
+        flipsBeforePeak = 0;
+        flipsAfterPeak = 0;
+        didLandOnHead = false;
+        maxHeightThisBounce = 0;
     }
 
     // Update blink
@@ -296,11 +375,26 @@ function UpdateUI(dt)
     // Main menu touch logic
     if (touch)
     {
-        if (mainMenu)
+        if (!mainMenuTouch)
         {
+            if (mainMenu)
+            {
+                mainMenuTouch = true;
+            }
+            mainMenu = false;
+        }
+
+        // Reset game?
+        if (goalIdx === goals.length &&
+            touchX > canvas.width * 0.5 &&
+            touchY < 75.0)
+        {
+            localStorage.setItem("ohflip.goalIdx", 0);
+            goalIdx = 0;
+            Reset();
+            mainMenu = true;
             mainMenuTouch = true;
         }
-        mainMenu = false;
     }
     else
     {
@@ -316,6 +410,17 @@ function UpdateUI(dt)
             object.splice(index, 1);
         }
     });
+
+    // Update goal transition logic
+    if (goalCompleteTime > 0.0)
+    {
+        goalCompleteTime -= dt;
+        if (goalCompleteTime <= 0.0)
+        {
+            goalIdx++;
+            localStorage.setItem("ohflip.goalIdx", goalIdx);
+        }
+    }
 }
 
 function DrawLine(x1, y1, x2, y2, color, width)
@@ -460,8 +565,24 @@ function DrawUI()
         DrawText(flipsTxt, 12, 50, 0.0, 20, "left", "#000");
         //DrawText(flipsTxt, 18, 60, 0.0, 25, "left", "#FFF");
 
-        DrawText(`Goal #${goalIdx + 1}:`, canvas.width - 12, 27, 0.0, 20, "right", "#000");
-        DrawText(goals[goalIdx].text, canvas.width - 12, 50, 0.0, 20, "right", "#000");
+        let goalTextColor = "#000";
+        if (goalCompleteTime > 0.0)
+        {
+            goalTextColor = (goalCompleteTime % 0.15 < 0.075) ? "#000" : "#00FF00";
+        }
+
+        if (goalIdx < goals.length)
+        {
+            DrawText(`Goal #${goalIdx + 1}:`, canvas.width - 12, 27, 0.0, 20, "right", goalTextColor);
+            DrawText(goals[goalIdx].text, canvas.width - 12, 50, 0.0, 20, "right", goalTextColor);
+        }
+        else
+        {
+            goalTextColor = (Date.now() % 800 < 400) ? "#000" : "#FF9600";
+
+            DrawText(`Congratulations! You've completed all goals!`, canvas.width - 12, 27, 0.0, 20, "right", goalTextColor);
+            DrawText("Press here to reset and play again!", canvas.width - 12, 50, 0.0, 20, "right", goalTextColor);
+        }
     }
 
     // Draw popups
@@ -471,16 +592,18 @@ function DrawUI()
         let offsetAnglePct = Math.min(popup.time / 0.4, 1.0);
         let xOffset = Math.sin(offsetAnglePct * Math.PI * 0.5) * 25.0;
         let yOffset = Math.sin(offsetAnglePct * Math.PI * 0.5) * 50.0;
-        DrawText(popup.text, popup.x + xOffset, popup.y - yOffset, -5*Math.PI/180.0, 30 + Math.sin(popupPct * Math.PI * 0.75) * 25.0, "center", "#000");
-        DrawText(popup.text, (popup.x + xOffset) - 3, (popup.y - yOffset) - 3, -5*Math.PI/180.0, 30 + Math.sin(popupPct * Math.PI * 0.75) * 25.0, "center", popup.color);
+        let startSize = popup.smallSize ? 20 : 30;
+        let sizeMult = popup.smallSize ? 10 : 25;
+        DrawText(popup.text, popup.x + xOffset, popup.y - yOffset, -5*Math.PI/180.0, startSize + Math.sin(popupPct * Math.PI * 0.75) * sizeMult, "center", "#000");
+        DrawText(popup.text, (popup.x + xOffset) - 3, (popup.y - yOffset) - 3, -5*Math.PI/180.0, startSize + Math.sin(popupPct * Math.PI * 0.75) * sizeMult, "center", popup.color);
     });
 
     ctx.restore();
 }
 
-function AddPopup(x, y, text, color)
+function AddPopup(x, y, text, color, smallSize)
 {
-    popups.push({x: x, y: y, text: text, color: color, time: 0.0});
+    popups.push({x: x, y: y, text: text, color: color, time: 0.0, smallSize: smallSize || false });
 }
 
 function FitToScreen()
@@ -509,9 +632,12 @@ function FitToScreen()
 
 function CheckGoals()
 {
-    if (goals[goalIdx].func(goals[goalIdx]))
+    if (goalIdx < goals.length && goals[goalIdx].func(goals[goalIdx]))
     {
-        console.log("SUCCESS!");
+        AddPopup(canvas.width - 100, 120, "complete!", "#FF0", true);
+        goalCompleteTime = 1.0;
+        didAFlipStreak = 0;
+        perfectStreak = 0;
     }
 }
 
@@ -523,6 +649,31 @@ function DidAFlipThisBounce(goal)
     }
 
     return false;
+}
+
+function LandedPerfectly(goal)
+{
+    return perfectJump && flipsLandedThisBounce > 0;
+}
+
+function FlipStreakCheck(goal)
+{
+    return didAFlipStreak >= goal.param;
+}
+
+function PerfectStreakCheck(goal)
+{
+    return perfectStreak >= goal.param;
+}
+
+function LandedOnHead(goal)
+{
+    return didLandOnHead;
+}
+
+function ReachedHeight(goal)
+{
+    return Math.floor(maxHeightThisBounce / 40.0) >= goal.param;
 }
 
 Reset();

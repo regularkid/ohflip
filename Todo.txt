@@ -14,9 +14,6 @@ Add missions
     - do a 5x flip
     - do a 6x flip
     - do a 7x flip
-    - do a 8x flip
-    - do a 9x flip
-    - do a 10x flip
     - do a flip before reaching peak
     - do a flip after reaching peak
     - do a double flip before reaching peak
@@ -46,3 +43,6 @@ Sounds - good/perfect/miss/goal complete
 ---DONE--- Add that num flips = multiplier on jump height
 ---DONE--- Add instructions
 ---DONE--- Add x2 x3 x4 etc. multiplier text popouts on flips
+---DONE--- Add key for resetting local storage
+---DONE--- Save goal to local storage
+Submit!
